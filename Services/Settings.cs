@@ -8,7 +8,7 @@ namespace TomTom2Komoot.Services
     {
         public Komoot Komoot { get; set; }
         public TomTom TomTom { get; set; }
-        public DateTime LastSyncAt { get; set; }
+        public DateTime LastSyncedWorkoutAt { get; set; }
 
         public void WriteLastSyncAt()
         {

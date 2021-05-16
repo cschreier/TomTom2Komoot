@@ -29,10 +29,10 @@ namespace TomTom2Komoot
                 komootService.Login(settings.Komoot.Username, settings.Komoot.Password);
                 tomtomService.Login(settings.TomTom.Username, settings.TomTom.Password);
 
-                Workout[] cyclingWorkouts = tomtomService.GetWorkouts(TomTomWorkoutEnum.Cycling, settings.LastSyncAt.ToUniversalTime());
+                Workout[] cyclingWorkouts = tomtomService.GetWorkouts(TomTomWorkoutEnum.Cycling, settings.LastSyncedWorkoutAt.ToUniversalTime());
                 Workout[] hikingWorkouts = tomtomService.GetWorkouts(TomTomWorkoutEnum.Hiking);
 
-                Workout[] workouts = cyclingWorkouts.Concat(hikingWorkouts).ToArray();
+                Workout[] workouts = cyclingWorkouts.Concat(hikingWorkouts).OrderBy(c => c.StartDateTime).ToArray();
                 logger.Info($"{workouts.Length} new workouts found");
 
                 foreach (Workout workout in workouts)
@@ -41,15 +41,14 @@ namespace TomTom2Komoot
                     {
                         byte[] activityBytes = tomtomService.DownloadActivityData(workout.Id);
                         komootService.Import(activityBytes);
+                        settings.LastSyncedWorkoutAt = workout.StartDateTime.ToUniversalTime();
                     }
                     catch (Exception ex)
                     {
-                        settings.LastSyncAt = workout.StartDateTime.AddMinutes(-1).ToUniversalTime();
+                        settings.LastSyncedWorkoutAt = workout.StartDateTime.AddMinutes(-1).ToUniversalTime();
                         throw new Exception($"Error while uploading workout {workout.Id} to Komoot. {ex.Message}");
                     }
-                }
-
-                settings.LastSyncAt = DateTime.UtcNow;
+                }                
             }
             catch (Exception ex)
             {
