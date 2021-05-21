@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace TomTom2Komoot.Models
 {
-    public class TomTomActivityModel
+    public class TomTom
     {
         [JsonPropertyName("workouts")]
         public Workout[] Workouts { get; set; }
@@ -16,8 +16,14 @@ namespace TomTom2Komoot.Models
 
         [JsonPropertyName("activity_type_id")]
         public int ActivityTypeId { get; set; }
+        
+        [JsonPropertyName("labels")]
+        public Labels Labels { get; set; }
+    }
 
-        [JsonPropertyName("start_datetime")]
-        public DateTime StartDateTime { get; set; }
+    public class Labels
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
     }
 }

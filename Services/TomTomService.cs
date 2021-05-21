@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.Json;
@@ -10,21 +12,30 @@ namespace TomTom2Komoot.Services
     public class TomTomService
     {
         private RestClient _client;
+        private string _username;
+        private string _password;
+        private long _lastSyncedWorkoutId;
+        private List<WorkoutType> _allWorkoutTypes;
         private bool _isLoginSuccessful;
 
-        public TomTomService()
+        public TomTomService(TomTom tomtomSettings)
         {
             _client = new RestClient("https://mysports.tomtom.com/service/webapi/v2");
             _client.CookieContainer = new();
+
+            _username = tomtomSettings.Username;
+            _password = tomtomSettings.Password;
+            _lastSyncedWorkoutId = tomtomSettings.LastSyncedWorkoutId;
+            _allWorkoutTypes = tomtomSettings.WorkoutTypes;
             _isLoginSuccessful = false;
         }
 
-        public void Login(string username, string password)
+        public void Login()
         {
             try
             {
                 RestRequest loginRequest = new RestRequest("auth/user/login");
-                loginRequest.AddJsonBody(new { email = username, password = password });
+                loginRequest.AddJsonBody(new { email = _username, password = _password });
                 IRestResponse response = _client.Post(loginRequest);
                 _isLoginSuccessful = response.IsSuccessful;
             }
@@ -34,20 +45,24 @@ namespace TomTom2Komoot.Services
             }
         }
 
-        public Workout[] GetWorkouts(TomTomWorkoutEnum? workoutFilter = null, DateTime? start = null)
+        public IEnumerable<Workout> GetWorkouts()
         {
-            if (!_isLoginSuccessful) throw new UnauthorizedAccessException("Not authorized on TomTom");
+            if (!_isLoginSuccessful)
+                throw new UnauthorizedAccessException("Not authorized on TomTom");
 
-            RestRequest allActivitiesRequest = new RestRequest("activity?tracking=true&trackingv=1&includeWebGoals=false&limit=2147483647");
+            RestRequest allActivitiesRequest = new RestRequest("activity");
             IRestResponse response = _client.Get(allActivitiesRequest);
-            Workout[] workouts = JsonSerializer.Deserialize<TomTomActivityModel>(response.Content).Workouts;
+            IEnumerable<Workout> workouts = JsonSerializer.Deserialize<Models.TomTom>(response.Content)?.Workouts;
 
-            if (workoutFilter != null)
-                workouts = workouts.Where(c => c.ActivityTypeId == (int)workoutFilter).ToArray();
-            if (start != null)
-                workouts = workouts.Where(c => c.StartDateTime.ToUniversalTime() > start).ToArray();
+            if (workouts == null)
+                throw new NullReferenceException($"Could not deserialize workouts from TomTom. {response.Content}");
 
-            return workouts;
+            workouts = workouts.Where(c => 
+                c.Id > _lastSyncedWorkoutId 
+                && _allWorkoutTypes.Where(c => c.IsActive).Any(t => t.TypeId == c.ActivityTypeId)
+            );
+
+            return workouts.OrderBy(c => c.Id);
         }
 
         public byte[] DownloadActivityData(long activityId)

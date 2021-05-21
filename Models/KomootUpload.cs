@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace TomTom2Komoot.Models
 {
-    public class KomootUploadModel
+    public class KomootUpload
     {
         [JsonPropertyName("date")]
         public string Date { get; set; }
@@ -22,7 +22,7 @@ namespace TomTom2Komoot.Models
         [JsonPropertyName("_embedded")]
         public EmbeddedCoordinates EmbeddedCoordinates { get; set; }
 
-        public KomootUploadModel(KomootImportModel importModel)
+        public KomootUpload(KomootImport importModel)
         {
             Status = "private";
             Type = "tour_recorded";

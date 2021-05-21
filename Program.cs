@@ -23,32 +23,30 @@ namespace TomTom2Komoot
                 logger.Info("app started");
                 settings = ReadSettingsFile();
 
-                KomootService komootService = new();
-                TomTomService tomtomService = new();
+                KomootService komootService = new(settings.Komoot);
+                TomTomService tomtomService = new(settings.TomTom);
 
-                komootService.Login(settings.Komoot.Username, settings.Komoot.Password);
-                tomtomService.Login(settings.TomTom.Username, settings.TomTom.Password);
+                komootService.Login();
+                tomtomService.Login();
 
-                Workout[] cyclingWorkouts = tomtomService.GetWorkouts(TomTomWorkoutEnum.Cycling, settings.LastSyncedWorkoutAt.ToUniversalTime());
-                Workout[] hikingWorkouts = tomtomService.GetWorkouts(TomTomWorkoutEnum.Hiking);
-
-                Workout[] workouts = cyclingWorkouts.Concat(hikingWorkouts).OrderBy(c => c.StartDateTime).ToArray();
-                logger.Info($"{workouts.Length} new workouts found");
+                IEnumerable<Workout> workouts = tomtomService.GetWorkouts();
+                logger.Info($"{workouts.Count()} new workouts found");
 
                 foreach (Workout workout in workouts)
                 {
                     try
                     {
                         byte[] activityBytes = tomtomService.DownloadActivityData(workout.Id);
-                        komootService.Import(activityBytes);
-                        settings.LastSyncedWorkoutAt = workout.StartDateTime.ToUniversalTime();
+                        komootService.Import(activityBytes, workout.Labels?.Name);
+                        settings.TomTom.LastSyncedWorkoutId = workout.Id;
+                        logger.Info($"workout {workout.Id} synchronized");
                     }
                     catch (Exception ex)
                     {
-                        settings.LastSyncedWorkoutAt = workout.StartDateTime.AddMinutes(-1).ToUniversalTime();
+                        settings.TomTom.LastSyncedWorkoutId = workout.Id;
                         throw new Exception($"Error while uploading workout {workout.Id} to Komoot. {ex.Message}");
                     }
-                }                
+                }
             }
             catch (Exception ex)
             {
@@ -56,7 +54,7 @@ namespace TomTom2Komoot
             }
             finally
             {
-                settings.WriteLastSyncAt();
+                settings.WriteLastSync();
             }
         }
 

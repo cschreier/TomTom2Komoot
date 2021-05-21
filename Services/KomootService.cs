@@ -9,24 +9,31 @@ namespace TomTom2Komoot.Services
     {
         private RestClient _authClient;
         private RestClient _apiClient;
+        private string _username;
+        private string _password;
         private bool _isLoginSuccessful;
 
-        public KomootService()
+
+        public KomootService(Komoot komootSettings)
         {
             _authClient = new RestClient("https://account.komoot.com");
             _authClient.CookieContainer = new();
 
             _apiClient = new RestClient("https://www.komoot.de/api");
             _apiClient.CookieContainer = _authClient.CookieContainer;
+
+            _username = komootSettings.Username;
+            _password = komootSettings.Password;
+
             _isLoginSuccessful = false;
         }
 
-        public void Login(string username, string password)
+        public void Login()
         {
             try
             {
                 RestRequest firstLoginRequest = new("v1/signin");
-                firstLoginRequest.AddJsonBody(new { email = username, password = password });
+                firstLoginRequest.AddJsonBody(new { email = _username, password = _password });
                 IRestResponse firstLoginResponse = _authClient.Post(firstLoginRequest);
 
                 RestRequest secondLoginRequest = new("actions/transfer?type=signin");
@@ -39,7 +46,7 @@ namespace TomTom2Komoot.Services
             }
         }
 
-        public void Import(byte[] data)
+        public void Import(byte[] data, string workoutName)
         {
             if (!_isLoginSuccessful) throw new UnauthorizedAccessException("Not authorized on Komoot");
 
@@ -48,9 +55,10 @@ namespace TomTom2Komoot.Services
             importRequest.AddParameter("application/octet-stream", data, ParameterType.RequestBody);
             IRestResponse importResponse = _apiClient.Post(importRequest);
 
-            KomootImportModel importModel = JsonSerializer.Deserialize<KomootImportModel>(importResponse.Content);
-            KomootUploadModel uploadModel = new(importModel);
-            string serializedUploadModel = JsonSerializer.Serialize(uploadModel);
+            KomootImport komootImport = JsonSerializer.Deserialize<KomootImport>(importResponse.Content);
+            KomootUpload komootUpload = new(komootImport);
+            komootUpload.Name = workoutName ?? "Import";
+            string serializedUploadModel = JsonSerializer.Serialize(komootUpload);
 
             RestRequest uploadRequest = new("v007/tours/?hl=de");
             uploadRequest.AddHeader("Accept", "application/hal+json,application/json");

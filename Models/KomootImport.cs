@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace TomTom2Komoot.Models
 {
-    public class KomootImportModel
+    public class KomootImport
     {
         [JsonPropertyName("_embedded")]
         public EmbeddedItems EmbeddedItems { get; set; }

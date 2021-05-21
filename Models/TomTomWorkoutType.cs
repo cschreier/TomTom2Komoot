@@ -2,7 +2,7 @@ using System;
 
 namespace TomTom2Komoot.Models
 {
-    public enum TomTomWorkoutEnum
+    public enum TomTomWorkoutType
     {
         Cycling = 11,
         Jogging = 16,
