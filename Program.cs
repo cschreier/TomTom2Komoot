@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using NLog;
 using RestSharp;
 using TomTom2Komoot.Models;
@@ -23,7 +24,7 @@ namespace TomTom2Komoot
                 logger.Info("app started");
                 settings = ReadSettingsFile();
 
-                KomootService komootService = new(settings.Komoot);
+                KomootService komootService = new();
                 TomTomService tomtomService = new(settings.TomTom);
 
                 komootService.Login();

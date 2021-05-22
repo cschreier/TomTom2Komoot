@@ -6,7 +6,7 @@
 *.user
 *.sln.docstates
 *.vscode
-appsettings.json
+*.env
 
 # Build results
 

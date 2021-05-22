@@ -1,0 +1,11 @@
+version: "3.4"
+
+services:
+    tomtom2komoot:
+        image: tomtom2komoot
+        build:
+            context: .
+            dockerfile: dev.Dockerfile
+        container_name: tomtom2komoot
+        env_file: 
+            - .env
