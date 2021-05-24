@@ -19,19 +19,19 @@ namespace TomTom2Komoot.Services
         private string[] _syncWorkoutTypes;
         private bool _isLoginSuccessful;
 
-        public TomTomService(TomTom tomtomSettings)
+        public TomTomService(UserSettings userSettings, TomTom tomtomSettings)
         {
             _client = new RestClient("https://mysports.tomtom.com/service/webapi/v2");
             _client.CookieContainer = new();
 
-            _username = Environment.GetEnvironmentVariable("TOMTOM_USERNAME");
-            _password = Environment.GetEnvironmentVariable("TOMTOM_PASSWORD");
-            _syncWorkoutTypes = Environment.GetEnvironmentVariable("SYNC_WORKOUT_TYPES")?.Split(',');
+            _username = userSettings.TomTomUser;
+            _password = userSettings.TomTomPassword;
+            _syncWorkoutTypes = userSettings.SyncWorkoutTypes;
 
             if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_password))
-                throw new ArgumentNullException("Komoot username or password is empty");
+                throw new Exception("TomTom username or password is empty");
             else if (_syncWorkoutTypes is null || _syncWorkoutTypes.Length == 0)
-                throw new ArgumentNullException("No workout types specified to synchonize");
+                throw new Exception("No workout types specified to synchonize");
 
             _lastSyncedWorkoutId = tomtomSettings.LastSyncedWorkoutId;
             _allWorkoutTypes = tomtomSettings.WorkoutTypes;
@@ -64,7 +64,7 @@ namespace TomTom2Komoot.Services
             IEnumerable<Workout> workouts = JsonSerializer.Deserialize<Models.TomTom>(response.Content)?.Workouts;
 
             if (workouts == null)
-                throw new NullReferenceException($"Could not deserialize workouts from TomTom. {response.Content}");
+                throw new Exception($"Could not deserialize workouts from TomTom. {response.Content}");
 
             workouts = workouts.Where(c =>
                 c.Id > _lastSyncedWorkoutId

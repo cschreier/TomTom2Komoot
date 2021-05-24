@@ -14,7 +14,7 @@ namespace TomTom2Komoot.Services
         private bool _isLoginSuccessful;
 
 
-        public KomootService()
+        public KomootService(UserSettings userSettings)
         {
             _authClient = new RestClient("https://account.komoot.com");
             _authClient.CookieContainer = new();
@@ -22,11 +22,11 @@ namespace TomTom2Komoot.Services
             _apiClient = new RestClient("https://www.komoot.de/api");
             _apiClient.CookieContainer = _authClient.CookieContainer;
 
-            _username = Environment.GetEnvironmentVariable("KOMOOT_USERNAME");
-            _password = Environment.GetEnvironmentVariable("KOMOOT_PASSWORD");
+            _username = userSettings.KomootUser;
+            _password = userSettings.KomootPassword;
 
-            if(string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_password))
-                throw new ArgumentNullException("Komoot username or password is empty");
+            if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_password))
+                throw new Exception("Komoot username or password is empty");
 
             _isLoginSuccessful = false;
         }

@@ -18,14 +18,16 @@ namespace TomTom2Komoot
         static void Main(string[] args)
         {
             Logger logger = LogManager.GetCurrentClassLogger();
-            Settings settings = new();
+            AppSettings appsettings = new();
+            UserSettings userSettings = new(args);
+
             try
             {
                 logger.Info("app started");
-                settings = ReadSettingsFile();
+                appsettings = ReadAppSettingsFile();
 
-                KomootService komootService = new();
-                TomTomService tomtomService = new(settings.TomTom);
+                KomootService komootService = new(userSettings);
+                TomTomService tomtomService = new(userSettings, appsettings.TomTom);
 
                 komootService.Login();
                 tomtomService.Login();
@@ -39,12 +41,12 @@ namespace TomTom2Komoot
                     {
                         byte[] activityBytes = tomtomService.DownloadActivityData(workout.Id);
                         komootService.Import(activityBytes, workout.Labels?.Name);
-                        settings.TomTom.LastSyncedWorkoutId = workout.Id;
+                        appsettings.TomTom.LastSyncedWorkoutId = workout.Id;
                         logger.Info($"workout {workout.Id} synchronized");
                     }
                     catch (Exception ex)
                     {
-                        settings.TomTom.LastSyncedWorkoutId = workout.Id;
+                        appsettings.TomTom.LastSyncedWorkoutId = workout.Id;
                         throw new Exception($"Error while uploading workout {workout.Id} to Komoot. {ex.Message}");
                     }
                 }
@@ -55,17 +57,17 @@ namespace TomTom2Komoot
             }
             finally
             {
-                settings.WriteLastSync();
+                appsettings.WriteLastSync();
             }
         }
 
-        private static Settings ReadSettingsFile()
+        private static AppSettings ReadAppSettingsFile()
         {
             try
             {
                 StreamReader reader = new StreamReader("./appsettings.json");
                 string settings = reader.ReadToEnd();
-                return JsonSerializer.Deserialize<Settings>(settings);
+                return JsonSerializer.Deserialize<AppSettings>(settings);
             }
             catch (Exception ex)
             {

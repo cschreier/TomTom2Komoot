@@ -6,7 +6,7 @@ using TomTom2Komoot.Models;
 
 namespace TomTom2Komoot.Services
 {
-    public class Settings
+    public class AppSettings
     {
         public TomTom TomTom { get; set; }
 
